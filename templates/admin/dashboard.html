@@ -200,8 +200,20 @@
 {% endblock %}
 
 {% block scripts %}
+<script id="chart-json" type="application/json">
+    {{ {
+        "cat_labels": cat_labels,
+        "cat_values": cat_values,
+        "monthly_labels": monthly_labels,
+        "monthly_values": monthly_values
+    } | tojson }}
+</script>
+
 <script>
-  initPieChart('pieChart', {{ cat_labels|safe }}, {{ cat_values|safe }});
-  initBarChart('barChart', {{ monthly_labels|safe }}, {{ monthly_values|safe }});
+    const chartData = JSON.parse(document.getElementById('chart-json').textContent);
+
+    initPieChart('pieChart', chartData.cat_labels, chartData.cat_values);
+    initBarChart('barChart', chartData.monthly_labels, chartData.monthly_values);
 </script>
 {% endblock %}
+
