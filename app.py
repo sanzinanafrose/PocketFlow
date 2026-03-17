@@ -759,6 +759,27 @@ def admin_delete_expense(expense_id):
     return redirect(url_for('admin_dashboard'))
 
 
+@app.route('/admin/user/delete/<int:user_id>', methods=['POST'])
+@admin_required
+def admin_delete_user(user_id):
+    if user_id == session.get('user_id'):
+        flash('You cannot delete your own admin account from this interface.', 'danger')
+        return redirect(url_for('admin_dashboard'))
+
+    conn = get_db()
+    user = conn.execute('SELECT id, is_admin FROM users WHERE id = ?', [user_id]).fetchone()
+    if not user or user['is_admin']:
+        conn.close()
+        flash('User not found or cannot delete admin user.', 'danger')
+        return redirect(url_for('admin_dashboard'))
+
+    conn.execute('DELETE FROM users WHERE id = ?', [user_id])
+    conn.commit()
+    conn.close()
+    flash('User deleted successfully. All their expenses have been removed.', 'success')
+    return redirect(url_for('admin_dashboard'))
+
+
 # ── Entry point ────────────────────────────────────────────────────────────────
 
 if __name__ == '__main__':
