@@ -1,0 +1,156 @@
+{% extends 'base.html' %}
+{% block title %}My Profile{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width:580px">
+  <div class="page-header mt-2">
+    <h2><i class="bi bi-person-circle me-2 text-primary"></i>My Profile</h2>
+    <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-arrow-left me-1"></i>Dashboard
+    </a>
+  </div>
+
+  <!-- Avatar / Info card -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-body d-flex align-items-center gap-4 p-4">
+      <!-- Avatar display -->
+      <div class="position-relative" style="flex-shrink:0">
+        {% if user.avatar %}
+          <img id="avatarPreview"
+               src="{{ url_for('static', filename=user.avatar) }}"
+               alt="Profile picture"
+               class="rounded-circle border border-2 border-primary"
+               style="width:80px;height:80px;object-fit:cover;">
+        {% else %}
+          <div id="avatarPreview"
+               class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center border border-2 border-primary"
+               style="width:80px;height:80px;">
+            <i class="bi bi-person-fill text-primary" style="font-size:2.2rem"></i>
+          </div>
+        {% endif %}
+      </div>
+
+      <div>
+        <h4 class="fw-bold mb-1">{{ user.username }}</h4>
+        <p class="text-muted mb-0 small"><i class="bi bi-envelope me-1"></i>{{ user.email }}</p>
+        <p class="text-muted mb-0 small">
+          <i class="bi bi-calendar me-1"></i>Member since {{ user.created_at[:10] }}
+        </p>
+        {% if user.avatar %}
+          <!-- Remove avatar -->
+          <form method="POST" action="{{ url_for('profile') }}" class="d-inline mt-2">
+            <input type="hidden" name="action" value="remove_avatar">
+            <input type="hidden" name="current_password" value="">
+            <button type="submit" class="btn btn-sm btn-outline-danger mt-2"
+                    onclick="return confirm('Remove your profile picture?')">
+              <i class="bi bi-trash me-1"></i>Remove Photo
+            </button>
+          </form>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Update form -->
+  <div class="card shadow-sm">
+    <div class="card-header bg-white fw-semibold">
+      <i class="bi bi-pencil me-2 text-primary"></i>Update Profile
+    </div>
+    <div class="card-body p-4">
+      <form method="POST" action="{{ url_for('profile') }}"
+            enctype="multipart/form-data" novalidate>
+        <input type="hidden" name="action" value="update">
+
+        <!-- Profile Picture Upload -->
+        <div class="mb-3">
+          <label for="avatar" class="form-label fw-semibold">
+            <i class="bi bi-camera me-1 text-primary"></i>Profile Picture
+            <span class="text-muted fw-normal">(JPG, PNG, GIF, WEBP · max 2 MB)</span>
+          </label>
+          <input type="file" id="avatar" name="avatar" class="form-control"
+                 accept="image/jpeg,image/png,image/gif,image/webp">
+          <div class="form-text">Leave blank to keep your current photo.</div>
+        </div>
+
+        <hr class="my-3">
+
+        <div class="mb-3">
+          <label for="username" class="form-label fw-semibold">Username</label>
+          <div class="input-group">
+            <span class="input-group-text"><i class="bi bi-person"></i></span>
+            <input type="text" id="username" name="username" class="form-control"
+                   value="{{ user.username }}" required>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label for="email" class="form-label fw-semibold">Email Address</label>
+          <div class="input-group">
+            <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+            <input type="email" id="email" name="email" class="form-control"
+                   value="{{ user.email }}" required>
+          </div>
+        </div>
+
+        <hr class="my-4">
+
+        <p class="fw-semibold text-muted mb-3">
+          <i class="bi bi-lock me-1"></i>Change Password
+          <span class="fw-normal">(leave blank to keep current password)</span>
+        </p>
+
+        <div class="mb-3">
+          <label for="current_password" class="form-label fw-semibold">
+            Current Password <span class="text-danger">*</span>
+          </label>
+          <div class="input-group">
+            <span class="input-group-text"><i class="bi bi-lock"></i></span>
+            <input type="password" id="current_password" name="current_password" class="form-control"
+                   placeholder="Required to save any changes" required>
+          </div>
+        </div>
+
+        <div class="mb-4">
+          <label for="new_password" class="form-label fw-semibold">New Password</label>
+          <div class="input-group">
+            <span class="input-group-text"><i class="bi bi-key"></i></span>
+            <input type="password" id="new_password" name="new_password" class="form-control"
+                   placeholder="Min 6 characters (optional)">
+          </div>
+        </div>
+
+        <div class="d-grid">
+          <button type="submit" class="btn btn-primary fw-semibold">
+            <i class="bi bi-check-lg me-2"></i>Save Changes
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Live preview of the chosen image before upload
+  document.getElementById('avatar').addEventListener('change', function () {
+    var file = this.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function (e) {
+      var preview = document.getElementById('avatarPreview');
+      // Replace whatever is there with an <img>
+      var img = document.createElement('img');
+      img.src = e.target.result;
+      img.id  = 'avatarPreview';
+      img.alt = 'Preview';
+      img.className = 'rounded-circle border border-2 border-primary';
+      img.style.cssText = 'width:80px;height:80px;object-fit:cover;';
+      preview.replaceWith(img);
+    };
+    reader.readAsDataURL(file);
+  });
+</script>
+{% endblock %}
+

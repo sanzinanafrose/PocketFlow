@@ -1,0 +1,164 @@
+/* ═══════════════════════════════════════
+   PocketFlow – Custom Styles
+   ═══════════════════════════════════════ */
+
+:root {
+  --pf-primary:   #4e73df;
+  --pf-success:   #1cc88a;
+  --pf-warning:   #f6c23e;
+  --pf-danger:    #e74a3b;
+  --pf-info:      #36b9cc;
+  --pf-secondary: #858796;
+  --pf-bg:        #f8f9fc;
+}
+
+/* ── Base ──────────────────────────────── */
+body {
+  background-color: var(--pf-bg);
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+main, .container.main-wrap {
+  flex: 1;
+}
+
+/* ── Navbar ────────────────────────────── */
+.navbar {
+  box-shadow: 0 2px 8px rgba(0,0,0,.15);
+}
+.navbar-brand {
+  font-size: 1.35rem;
+  letter-spacing: .5px;
+}
+
+/* ── Stat cards ────────────────────────── */
+.stat-card {
+  border: none;
+  border-left: 4px solid;
+  border-radius: .5rem;
+  transition: transform .15s, box-shadow .15s;
+}
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 .5rem 1rem rgba(0,0,0,.1) !important;
+}
+.stat-card.primary { border-left-color: var(--pf-primary); }
+.stat-card.success { border-left-color: var(--pf-success); }
+.stat-card.warning { border-left-color: var(--pf-warning); }
+.stat-card.info    { border-left-color: var(--pf-info);    }
+.stat-card.danger  { border-left-color: var(--pf-danger);  }
+
+.stat-icon {
+  font-size: 2rem;
+  opacity: .3;
+}
+
+/* ── Category badges ───────────────────── */
+.cat-Food          { background-color: #FF6384 !important; }
+.cat-Transport     { background-color: #36A2EB !important; }
+.cat-Entertainment { background-color: #FFCE56 !important; color: #333 !important; }
+.cat-Bills         { background-color: #4BC0C0 !important; }
+.cat-Shopping      { background-color: #9966FF !important; }
+.cat-Health        { background-color: #FF9F40 !important; }
+.cat-Education     { background-color: #6366f1 !important; }
+.cat-Other         { background-color: #858796 !important; }
+
+/* ── Table ─────────────────────────────── */
+.table-hover tbody tr:hover {
+  background-color: rgba(78,115,223,.05);
+}
+.table-scroll {
+  max-height: 460px;
+  overflow-y: auto;
+}
+
+/* ── Charts ────────────────────────────── */
+.chart-box {
+  position: relative;
+  height: 300px;
+}
+
+/* ── Filter card ───────────────────────── */
+.filter-card {
+  border: 1px solid #e3e6f0;
+  border-radius: .5rem;
+  background: #fff;
+}
+
+/* ── Hero (landing page) ───────────────── */
+.hero-section {
+  background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+  color: #fff;
+  padding: 90px 0 70px;
+}
+.hero-section h1 { font-size: 3rem; font-weight: 700; }
+.hero-section p  { font-size: 1.2rem; opacity: .9; }
+
+.feature-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.75rem;
+  margin: 0 auto 1rem;
+}
+
+/* ── Auth cards ────────────────────────── */
+.auth-card {
+  max-width: 440px;
+  margin: 60px auto;
+  border: none;
+  border-radius: .75rem;
+  box-shadow: 0 .5rem 1.5rem rgba(0,0,0,.12);
+}
+.auth-card .card-header {
+  background: linear-gradient(135deg, #4e73df, #224abe);
+  color: #fff;
+  border-radius: .75rem .75rem 0 0 !important;
+  text-align: center;
+  padding: 1.5rem;
+}
+
+/* ── Page header ───────────────────────── */
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: .5rem;
+}
+.page-header h2 {
+  margin: 0;
+  font-weight: 700;
+  font-size: 1.5rem;
+}
+
+/* ── Misc ──────────────────────────────── */
+.tag-pill {
+  display: inline-block;
+  font-size: .7rem;
+  padding: .15rem .45rem;
+  background: #e8eaed;
+  border-radius: 999px;
+  color: #555;
+  margin: 1px;
+}
+
+.text-truncate-note {
+  max-width: 160px;
+  display: inline-block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  vertical-align: bottom;
+}
+
+footer {
+  margin-top: auto;
+}

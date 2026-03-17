@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+{% block title %}Welcome{% endblock %}
+
+{% block content %}
+<!-- Hero -->
+<section class="hero-section">
+  <div class="container text-center">
+    <i class="bi bi-wallet2 display-3 mb-3 d-block"></i>
+    <h1>PocketFlow</h1>
+    <p class="lead mb-4">Take control of your spending.<br>Track, categorise, and analyse your expenses in one place.</p>
+    <a href="{{ url_for('register') }}" class="btn btn-light btn-lg me-2 fw-semibold">
+      <i class="bi bi-person-plus me-1"></i>Get Started Free
+    </a>
+    <a href="{{ url_for('login') }}" class="btn btn-outline-light btn-lg">
+      <i class="bi bi-box-arrow-in-right me-1"></i>Sign In
+    </a>
+  </div>
+</section>
+
+<!-- Features -->
+<div class="container py-5">
+  <h2 class="text-center fw-bold mb-5">Everything You Need to Manage Expenses</h2>
+  <div class="row g-4 text-center">
+    <div class="col-md-4">
+      <div class="card border-0 shadow-sm h-100 p-4">
+        <div class="feature-icon bg-primary bg-opacity-10 text-primary">
+          <i class="bi bi-plus-circle-fill"></i>
+        </div>
+        <h5 class="fw-bold">Easy Expense Entry</h5>
+        <p class="text-muted">Add expenses in seconds — title, amount, date, category, notes, and custom tags all in one form.</p>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card border-0 shadow-sm h-100 p-4">
+        <div class="feature-icon bg-success bg-opacity-10 text-success">
+          <i class="bi bi-funnel-fill"></i>
+        </div>
+        <h5 class="fw-bold">Smart Filtering</h5>
+        <p class="text-muted">Filter expenses by date range, category, amount, or keyword to instantly find what you're looking for.</p>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card border-0 shadow-sm h-100 p-4">
+        <div class="feature-icon bg-warning bg-opacity-10 text-warning">
+          <i class="bi bi-pie-chart-fill"></i>
+        </div>
+        <h5 class="fw-bold">Visual Analytics</h5>
+        <p class="text-muted">Interactive pie and bar charts break down your spending by category and monthly trend at a glance.</p>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card border-0 shadow-sm h-100 p-4">
+        <div class="feature-icon bg-info bg-opacity-10 text-info">
+          <i class="bi bi-tags-fill"></i>
+        </div>
+        <h5 class="fw-bold">Categories & Tags</h5>
+        <p class="text-muted">8 predefined categories (Food, Transport, Bills …) plus custom tags for granular organisation.</p>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card border-0 shadow-sm h-100 p-4">
+        <div class="feature-icon bg-danger bg-opacity-10 text-danger">
+          <i class="bi bi-pencil-square"></i>
+        </div>
+        <h5 class="fw-bold">Edit & Delete</h5>
+        <p class="text-muted">Correct mistakes or remove duplicate records from your history with a single click.</p>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card border-0 shadow-sm h-100 p-4">
+        <div class="feature-icon bg-secondary bg-opacity-10 text-secondary">
+          <i class="bi bi-shield-lock-fill"></i>
+        </div>
+        <h5 class="fw-bold">Admin Oversight</h5>
+        <p class="text-muted">Admins get a dedicated dashboard to view, manage, and audit all users' expenses platform-wide.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Demo credentials -->
+<div class="container pb-5">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card border-info">
+        <div class="card-header bg-info bg-opacity-10 text-info fw-semibold">
+          <i class="bi bi-info-circle me-2"></i>Demo Credentials
+        </div>
+        <div class="card-body">
+          <div class="row text-center">
+            <div class="col-md-6 border-end">
+              <p class="mb-1 fw-semibold">Regular User</p>
+              <p class="text-muted mb-0">Register a new account with any email &amp; password.<br>Login instantly to start tracking.</p>
+            </div>
+            <div class="col-md-6">
+              <p class="mb-1 fw-semibold">Admin Account</p>
+              <p class="text-muted mb-0">
+                Username: <code>admin</code><br>
+                Password: <code>Admin@123</code>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
