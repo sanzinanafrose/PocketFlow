@@ -70,7 +70,7 @@
       <span class="fw-semibold"><i class="bi bi-funnel me-2 text-primary"></i>Filter &amp; Search</span>
       {% if has_filter %}
         <a href="{{ url_for('dashboard') }}" class="btn btn-sm btn-outline-secondary">
-          <i class="bi bi-x-circle me-1"></i>Clear Filters
+          <i class="bi bi-x-circle me-1"></i>Clear Filter
         </a>
       {% endif %}
     </div>
@@ -273,8 +273,20 @@
 {% endblock %}
 
 {% block scripts %}
+<script id="chart-data" type="application/json">
+{{ {
+    "cat_labels": cat_labels,
+    "cat_values": cat_values,
+    "monthly_labels": monthly_labels,
+    "monthly_values": monthly_values
+} | tojson }}
+</script>
+
 <script>
-  initPieChart('pieChart', {{ cat_labels|safe }}, {{ cat_values|safe }});
-  initBarChart('barChart', {{ monthly_labels|safe }}, {{ monthly_values|safe }});
+    const chartData = JSON.parse(document.getElementById('chart-data').textContent);
+
+    initPieChart('pieChart', chartData.cat_labels, chartData.cat_values);
+    initBarChart('barChart', chartData.monthly_labels, chartData.monthly_values);
 </script>
 {% endblock %}
+
