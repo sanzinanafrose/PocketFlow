@@ -63,7 +63,7 @@
         <!-- Notes -->
         <div class="mb-3">
           <label for="notes" class="form-label fw-semibold">
-            <i class="bi bi-chat-left-text me-1 text-secondary"></i>Notes
+            <i class="bi bi-chat-left-text me-1 text-secondary"></i> Write Notes
           </label>
           <textarea id="notes" name="notes" class="form-control" rows="2">{{ request.form.get('notes', expense.notes) }}</textarea>
         </div>
@@ -80,7 +80,7 @@
 
         <div class="d-flex gap-2">
           <button type="submit" class="btn btn-primary">
-            <i class="bi bi-check-lg me-1"></i>Update Expense
+            <i class="bi bi-check-lg me-1"></i>Update Expenses
           </button>
           <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">Cancel</a>
         </div>
