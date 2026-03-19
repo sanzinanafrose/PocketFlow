@@ -459,10 +459,10 @@ def dashboard():
         categories=CATEGORIES,
         has_filter=has_filter,
         filters=filters,
-        cat_labels=json.dumps([r['category'] for r in cat_rows]),
-        cat_values=json.dumps([r['total']    for r in cat_rows]),
-        monthly_labels=json.dumps([r['month'] for r in monthly_rows]),
-        monthly_values=json.dumps([r['total'] for r in monthly_rows]),
+        cat_labels=[r['category'] for r in cat_rows],
+        cat_values=[r['total'] for r in cat_rows],
+        monthly_labels=[r['month'] for r in monthly_rows],
+        monthly_values=[r['total'] for r in monthly_rows],
     )
 
 

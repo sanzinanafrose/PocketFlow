@@ -229,7 +229,7 @@
           {% endif %}
         </div>
         <div class="card-body d-flex align-items-center justify-content-center">
-          {% if cat_labels != '[]' %}
+          {% if cat_labels %}
             <div class="chart-box w-100">
               <canvas id="pieChart"></canvas>
             </div>
@@ -256,7 +256,7 @@
           {% endif %}
         </div>
         <div class="card-body d-flex align-items-center justify-content-center">
-          {% if monthly_labels != '[]' %}
+          {% if monthly_labels %}
             <div class="chart-box w-100">
               <canvas id="barChart"></canvas>
             </div>
