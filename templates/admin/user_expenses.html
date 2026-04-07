@@ -97,16 +97,18 @@
                     {% endif %}
                   </td>
                   <td class="text-center">
-                    <a href="{{ url_for('admin_edit_expense', expense_id=exp.id) }}"
-                       class="btn btn-sm btn-outline-primary me-1" title="Edit">
-                      <i class="bi bi-pencil"></i>
-                    </a>
-                    <form method="POST" action="{{ url_for('admin_delete_expense', expense_id=exp.id) }}"
-                          class="delete-form d-inline">
-                      <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
-                        <i class="bi bi-trash"></i>
-                      </button>
-                    </form>
+                    <div class="d-inline-flex flex-column gap-2 align-items-center">
+                      <a href="{{ url_for('admin_edit_expense', expense_id=exp.id) }}"
+                         class="btn btn-sm btn-outline-primary" title="Edit">
+                        <i class="bi bi-pencil"></i>
+                      </a>
+                      <form method="POST" action="{{ url_for('admin_delete_expense', expense_id=exp.id) }}"
+                            class="delete-form d-inline">
+                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
+                          <i class="bi bi-trash"></i>
+                        </button>
+                      </form>
+                    </div>
                   </td>
                 </tr>
                 {% endfor %}
@@ -144,6 +146,6 @@
 
 {% block scripts %}
 <script>
-  initPieChart('pieChart', {{ cat_labels|safe }}, {{ cat_values|safe }});
+  initPieChart('pieChart', {{ cat_labels|tojson }}, {{ cat_values|tojson }});
 </script>
 {% endblock %}

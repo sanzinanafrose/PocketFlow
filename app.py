@@ -6,7 +6,6 @@ import os
 import secrets
 import time
 from datetime import datetime
-import json
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'pocket-flow-secret-key-change-in-production')
@@ -634,10 +633,10 @@ def admin_dashboard():
     return render_template('admin/dashboard.html',
         users=users,
         stats=stats,
-        cat_labels=json.dumps([r['category'] for r in cat_rows]),
-        cat_values=json.dumps([r['total']    for r in cat_rows]),
-        monthly_labels=json.dumps([r['month'] for r in monthly_rows]),
-        monthly_values=json.dumps([r['total'] for r in monthly_rows]),
+        cat_labels=[r['category'] for r in cat_rows],
+        cat_values=[r['total'] for r in cat_rows],
+        monthly_labels=[r['month'] for r in monthly_rows],
+        monthly_values=[r['total'] for r in monthly_rows],
         recent=recent,
     )
 
@@ -673,8 +672,8 @@ def admin_user_expenses(user_id):
         expenses=expenses,
         total=total,
         categories=CATEGORIES,
-        cat_labels=json.dumps([r['category'] for r in cat_rows]),
-        cat_values=json.dumps([r['total']    for r in cat_rows]),
+        cat_labels=[r['category'] for r in cat_rows],
+        cat_values=[r['total'] for r in cat_rows],
     )
 
 
