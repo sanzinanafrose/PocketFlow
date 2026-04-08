@@ -145,16 +145,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script id="chart-data" type="application/json">
-{{ {
-    "cat_labels": cat_labels,
-    "cat_values": cat_values
-} | tojson }}
-</script>
-
 <script>
-  const chartData = JSON.parse(document.getElementById('chart-data').textContent);
-
-  initPieChart('pieChart', chartData.cat_labels, chartData.cat_values);
+  initPieChart('pieChart', {{ cat_labels|tojson }}, {{ cat_values|tojson }});
 </script>
 {% endblock %}
