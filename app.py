@@ -436,8 +436,8 @@ def dashboard():
         chart_where += ' AND (title LIKE ? OR notes LIKE ? OR tags LIKE ?)'
         chart_params += [f'%{search}%', f'%{search}%', f'%{search}%']
 
-    cat_rows = conn.execute(
-        f'SELECT category, SUM(amount) AS total FROM expenses {chart_where} '
+    cat_agg_rows = conn.execute(
+        f'SELECT category, COUNT(*) AS entries, SUM(amount) AS total FROM expenses {chart_where} '
         f'GROUP BY category ORDER BY total DESC', chart_params
     ).fetchall()
     monthly_rows = conn.execute(
@@ -445,6 +445,31 @@ def dashboard():
         f"FROM expenses {chart_where} GROUP BY month ORDER BY month ASC", chart_params
     ).fetchall()
     conn.close()
+
+    # Keep category chart/table stable by always showing all known categories.
+    cat_lookup = {
+        r['category']: {
+            'entries': int(r['entries'] or 0),
+            'total': float(r['total'] or 0)
+        }
+        for r in cat_agg_rows
+    }
+    cat_rows = [
+        {
+            'category': cat,
+            'entries': cat_lookup.get(cat, {}).get('entries', 0),
+            'total': cat_lookup.get(cat, {}).get('total', 0.0)
+        }
+        for cat in CATEGORIES
+    ]
+    # Preserve visibility for legacy/custom categories already in DB.
+    for r in cat_agg_rows:
+        if r['category'] not in CATEGORIES:
+            cat_rows.append({
+                'category': r['category'],
+                'entries': int(r['entries'] or 0),
+                'total': float(r['total'] or 0)
+            })
 
     filtered_total = sum(e['amount'] for e in expenses)
 
@@ -458,6 +483,7 @@ def dashboard():
         categories=CATEGORIES,
         has_filter=has_filter,
         filters=filters,
+        cat_rows=cat_rows,
         cat_labels=[r['category'] for r in cat_rows],
         cat_values=[r['total'] for r in cat_rows],
         monthly_labels=[r['month'] for r in monthly_rows],

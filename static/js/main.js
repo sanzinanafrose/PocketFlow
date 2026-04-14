@@ -19,6 +19,19 @@ const PALETTE = [
   '#9966FF', '#FF9F40', '#6366f1', '#858796'
 ];
 
+const CURRENCY_0 = new Intl.NumberFormat('en-US', {
+  style: 'currency',
+  currency: 'USD',
+  maximumFractionDigits: 0
+});
+
+const CURRENCY_2 = new Intl.NumberFormat('en-US', {
+  style: 'currency',
+  currency: 'USD',
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2
+});
+
 // ── Doughnut / Pie chart ─────────────────────────────────────────────────────
 function initPieChart(canvasId, labels, values) {
   var ctx = document.getElementById(canvasId);
@@ -44,8 +57,53 @@ function initPieChart(canvasId, labels, values) {
             label: function (ctx) {
               var total = ctx.dataset.data.reduce(function (a, b) { return a + b; }, 0);
               var pct   = ((ctx.raw / total) * 100).toFixed(1);
-              return '  $' + ctx.raw.toFixed(2) + '  (' + pct + '%)';
+              return '  ' + CURRENCY_2.format(ctx.raw) + '  (' + pct + '%)';
             }
+          }
+        }
+      }
+    }
+  });
+}
+
+// ── Column chart (category totals) ─────────────────────────────────────────
+function initCategoryColumnChart(canvasId, labels, values) {
+  var ctx = document.getElementById(canvasId);
+  if (!ctx || !labels || !labels.length) return;
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Category Total ($)',
+        data: values,
+        backgroundColor: labels.map(function (_, i) { return PALETTE[i % PALETTE.length] + 'CC'; }),
+        borderColor: labels.map(function (_, i) { return PALETTE[i % PALETTE.length]; }),
+        borderWidth: 1,
+        borderRadius: 4,
+        minBarLength: 3
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: {
+          ticks: {
+            maxRotation: 0,
+            minRotation: 0
+          }
+        },
+        y: {
+          beginAtZero: true,
+          ticks: { callback: function (v) { return CURRENCY_0.format(v); } }
+        }
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: function (ctx) { return '  ' + CURRENCY_2.format(ctx.raw); }
           }
         }
       }
@@ -67,7 +125,8 @@ function initBarChart(canvasId, labels, values) {
         backgroundColor: 'rgba(78,115,223,.75)',
         borderColor:     'rgba(78,115,223,1)',
         borderWidth: 1,
-        borderRadius: 4
+        borderRadius: 4,
+        minBarLength: 3
       }]
     },
     options: {
@@ -76,14 +135,14 @@ function initBarChart(canvasId, labels, values) {
       scales: {
         y: {
           beginAtZero: true,
-          ticks: { callback: function (v) { return '$' + v.toFixed(0); } }
+          ticks: { callback: function (v) { return CURRENCY_0.format(v); } }
         }
       },
       plugins: {
         legend: { display: false },
         tooltip: {
           callbacks: {
-            label: function (ctx) { return '  $' + ctx.raw.toFixed(2); }
+            label: function (ctx) { return '  ' + CURRENCY_2.format(ctx.raw); }
           }
         }
       }
