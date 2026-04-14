@@ -78,31 +78,46 @@
   </div>
 </div>
 
-<!-- Demo credentials -->
-<div class="container pb-5">
-  <div class="row justify-content-center">
-    <div class="col-md-8">
-      <div class="card border-info">
-        <div class="card-header bg-info bg-opacity-10 text-info fw-semibold">
-          <i class="bi bi-info-circle me-2"></i>Demo Credentials
+<!-- Money management highlight -->
+<section class="money-flow-section pb-5">
+  <div class="container">
+    <div class="money-flow-card">
+      <div class="money-flow-head">
+        <span class="money-chip"><i class="bi bi-stars me-2"></i>PocketFlow Method</span>
+        <h3 class="mb-2">From random spending to clear money decisions</h3>
+        <p class="mb-0">A simple 3-step flow to manage your expenses daily and build stronger financial habits.</p>
+      </div>
+
+      <div class="row g-3 mt-1">
+        <div class="col-md-4">
+          <div class="flow-step step-track h-100">
+            <div class="step-icon"><i class="bi bi-journal-check"></i></div>
+            <h5>1. Capture</h5>
+            <p class="mb-0">Record each expense in seconds with date, category, notes, and tags.</p>
+          </div>
         </div>
-        <div class="card-body">
-          <div class="row text-center">
-            <div class="col-md-6 border-end">
-              <p class="mb-1 fw-semibold">Regular User</p>
-              <p class="text-muted mb-0">Register a new account with any email &amp; password.<br>Login instantly to start tracking.</p>
-            </div>
-            <div class="col-md-6">
-              <p class="mb-1 fw-semibold">Admin Account</p>
-              <p class="text-muted mb-0">
-                Username: <code>admin</code><br>
-                Password: <code>Admin@123</code>
-              </p>
-            </div>
+        <div class="col-md-4">
+          <div class="flow-step step-review h-100">
+            <div class="step-icon"><i class="bi bi-graph-up"></i></div>
+            <h5>2. Review</h5>
+            <p class="mb-0">Use category and monthly charts to spot heavy spending and hidden patterns.</p>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="flow-step step-adjust h-100">
+            <div class="step-icon"><i class="bi bi-bullseye"></i></div>
+            <h5>3. Adjust</h5>
+            <p class="mb-0">Filter, compare, and improve week by week so your money goes where it matters.</p>
           </div>
         </div>
       </div>
+
+      <div class="money-flow-cta">
+        <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg fw-semibold">
+          <i class="bi bi-rocket-takeoff me-1"></i>Start Your Money Flow
+        </a>
+      </div>
     </div>
   </div>
-</div>
+</section>
 {% endblock %}
