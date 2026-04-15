@@ -111,6 +111,45 @@ function initCategoryColumnChart(canvasId, labels, values) {
   });
 }
 
+// ── Alert risk summary chart ────────────────────────────────────────────────
+function initAlertSummaryChart(canvasId, riskCounts) {
+  var ctx = document.getElementById(canvasId);
+  if (!ctx || !riskCounts) return;
+
+  var labels = ['Low', 'Medium', 'High'];
+  var values = labels.map(function (k) { return Number(riskCounts[k] || 0); });
+  var total = values.reduce(function (sum, n) { return sum + n; }, 0);
+  if (total === 0) return;
+
+  new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: labels,
+      datasets: [{
+        data: values,
+        backgroundColor: ['#1cc88a', '#f6c23e', '#e74a3b'],
+        borderColor: '#fff',
+        borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '62%',
+      plugins: {
+        legend: { position: 'bottom', labels: { boxWidth: 12 } },
+        tooltip: {
+          callbacks: {
+            label: function (ctx) {
+              return '  ' + ctx.label + ': ' + ctx.raw;
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
 // ── Bar chart (monthly trend) ────────────────────────────────────────────────
 function initBarChart(canvasId, labels, values) {
   var ctx = document.getElementById(canvasId);

@@ -64,6 +64,89 @@
     </div>
   </div>
 
+  <!-- ── Spending Alert ──────────────────────────────────────────────────── -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <span class="fw-semibold"><i class="bi bi-exclamation-triangle me-2 text-warning"></i>Spending Alert</span>
+      {% if has_spending_view_data %}
+        <span class="badge risk-badge risk-{{ spending_risk_level|lower }}">Risk: {{ spending_risk_level }}</span>
+      {% else %}
+        <span class="badge risk-badge risk-low">No spending data</span>
+      {% endif %}
+    </div>
+    <div class="card-body">
+      <form method="POST" action="{{ url_for('set_monthly_budget') }}" class="row g-2 align-items-end mb-3">
+        <div class="col-sm-7 col-md-4 col-lg-3">
+          <label class="form-label small fw-semibold">Monthly Budget Limit ($)</label>
+          <input type="number" name="monthly_budget" class="form-control form-control-sm"
+                 min="0" step="0.01" value="{{ '%.2f'|format(monthly_budget) if monthly_budget > 0 else '' }}"
+                 placeholder="Set monthly amount">
+        </div>
+        <div class="col-auto">
+          <button type="submit" class="btn btn-sm btn-primary">
+            <i class="bi bi-save me-1"></i>Save Limit
+          </button>
+        </div>
+        {% if monthly_budget > 0 %}
+          <div class="col-auto">
+            <button type="submit" name="monthly_budget" value="" class="btn btn-sm btn-outline-secondary">
+              <i class="bi bi-x-circle me-1"></i>Clear
+            </button>
+          </div>
+          <div class="col-12 col-lg-auto ms-lg-auto">
+            <span class="small text-muted">Current limit: <strong>${{ '%.2f'|format(monthly_budget) }}</strong></span>
+          </div>
+        {% endif %}
+      </form>
+
+      {% if not has_spending_view_data %}
+        <div class="alert alert-secondary mb-0">
+          <i class="bi bi-info-circle me-2"></i>No spending records match the current view, so alerts are hidden.
+        </div>
+      {% elif not spending_has_history %}
+        <div class="alert alert-secondary mb-0">
+          <i class="bi bi-info-circle me-2"></i>{{ spending_fallback_message }}
+        </div>
+      {% else %}
+        <div class="risk-meter-wrap mb-3">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <small class="text-muted">Spending Risk Meter</small>
+            <small class="fw-semibold">{{ spending_risk_score }} / 100</small>
+          </div>
+          <div class="progress risk-meter" role="progressbar" aria-valuenow="{{ spending_risk_score }}" aria-valuemin="0" aria-valuemax="100">
+            <div class="progress-bar risk-fill-{{ spending_risk_level|lower }}" style="width: {{ spending_risk_score }}%"></div>
+          </div>
+        </div>
+
+        {% if spending_alerts %}
+          <div class="row g-2">
+            <div class="col-lg-8">
+              {% for alert in spending_alerts %}
+                <div class="alert-card alert-{{ alert.risk|lower }} mb-2">
+                  <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap">
+                    <div>
+                      <strong>{{ alert.risk }} Risk:</strong> {{ alert.message }}
+                    </div>
+                    <span class="badge bg-light text-dark">{{ "%.1f"|format(alert.increase_pct) }}%</span>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+            <div class="col-lg-4">
+              <div class="mini-chart-box">
+                <canvas id="alertSummaryChart"></canvas>
+              </div>
+            </div>
+          </div>
+        {% else %}
+          <div class="alert alert-success mb-0">
+            <i class="bi bi-check-circle me-2"></i>No budget alert. {% if monthly_budget > 0 %}You are within your set budget.{% else %}Set a monthly budget limit to enable alerts.{% endif %}
+          </div>
+        {% endif %}
+      {% endif %}
+    </div>
+  </div>
+
   <!-- ── Filter / Search ──────────────────────────────────────────────────── -->
   <div class="card filter-card shadow-sm mb-4">
     <div class="card-header bg-white d-flex align-items-center justify-content-between">
@@ -325,15 +408,17 @@
     "cat_labels": cat_labels,
     "cat_values": cat_values,
     "monthly_labels": monthly_labels,
-    "monthly_values": monthly_values
+  "monthly_values": monthly_values,
+  "alert_risk_counts": spending_risk_counts
 } | tojson }}
 </script>
 
 <script>
     const chartData = JSON.parse(document.getElementById('chart-data').textContent);
 
-  initCategoryColumnChart('categoryChart', chartData.cat_labels, chartData.cat_values);
+    initCategoryColumnChart('categoryChart', chartData.cat_labels, chartData.cat_values);
     initBarChart('barChart', chartData.monthly_labels, chartData.monthly_values);
+    initAlertSummaryChart('alertSummaryChart', chartData.alert_risk_counts);
 </script>
 {% endblock %}
 

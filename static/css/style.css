@@ -88,6 +88,73 @@ main, .container.main-wrap {
   background: #fff;
 }
 
+/* ── Spending alerts ───────────────────── */
+.risk-badge {
+  font-weight: 600;
+  padding: .35rem .65rem;
+}
+
+.risk-low {
+  background: #e8f8ef;
+  color: #0f7a4d;
+  border: 1px solid #bfe8d1;
+}
+
+.risk-medium {
+  background: #fff8e6;
+  color: #9a6a00;
+  border: 1px solid #f2dfab;
+}
+
+.risk-high {
+  background: #fdeceb;
+  color: #ab2a21;
+  border: 1px solid #f3c5c1;
+}
+
+.risk-meter {
+  height: .8rem;
+  background: #eef1f7;
+}
+
+.risk-fill-low {
+  background: linear-gradient(90deg, #1cc88a, #27d79a);
+}
+
+.risk-fill-medium {
+  background: linear-gradient(90deg, #f6c23e, #ffc94a);
+}
+
+.risk-fill-high {
+  background: linear-gradient(90deg, #e74a3b, #ff5e4f);
+}
+
+.alert-card {
+  border-radius: .55rem;
+  border: 1px solid;
+  padding: .7rem .8rem;
+}
+
+.alert-low {
+  border-color: #bfe8d1;
+  background: #f3fcf7;
+}
+
+.alert-medium {
+  border-color: #f2dfab;
+  background: #fffbef;
+}
+
+.alert-high {
+  border-color: #f3c5c1;
+  background: #fff3f2;
+}
+
+.mini-chart-box {
+  position: relative;
+  height: 220px;
+}
+
 /* ── Hero (landing page) ───────────────── */
 .hero-section {
   background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);

@@ -5,7 +5,9 @@ import hashlib
 import os
 import secrets
 import time
-from datetime import datetime
+import calendar
+from collections import defaultdict
+from datetime import datetime, timedelta
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'pocket-flow-secret-key-change-in-production')
@@ -45,6 +47,201 @@ def is_valid_image(stream):
     return False
 
 
+def classify_risk(increase_pct):
+    if increase_pct > 30:
+        return 'High'
+    if increase_pct >= 15:
+        return 'Medium'
+    return 'Low'
+
+
+def _pct_change(current, baseline):
+    if baseline <= 0:
+        return None
+    return ((current - baseline) / baseline) * 100
+
+
+def build_spending_alerts(conn, user_id, monthly_budget=0.0):
+    """Rule-based spending alerts for user dashboard (SQLite-safe, no ML)."""
+    today = datetime.now().date()
+    baseline_start = today - timedelta(days=7)
+    week_start = today - timedelta(days=today.weekday())
+    current_month_start = today.replace(day=1)
+    prev_month_end = current_month_start - timedelta(days=1)
+    prev_month_start = prev_month_end.replace(day=1)
+
+    rows = conn.execute(
+        'SELECT amount, category, date FROM expenses WHERE user_id = ? AND date >= ? ORDER BY date ASC',
+        [user_id, (today - timedelta(days=95)).isoformat()]
+    ).fetchall()
+
+    baseline_cat = defaultdict(float)
+    day_totals = defaultdict(float)
+    week_cat = defaultdict(float)
+    current_month_cat = defaultdict(float)
+    prev_month_cat = defaultdict(float)
+
+    baseline_total = 0.0
+    current_month_total = 0.0
+    prev_month_total = 0.0
+
+    for r in rows:
+        raw_date = r['date']
+        try:
+            expense_date = datetime.strptime(raw_date, '%Y-%m-%d').date()
+        except (TypeError, ValueError):
+            continue
+
+        amount = float(r['amount'] or 0)
+        if amount <= 0:
+            continue
+        category = r['category'] if r['category'] else 'Other'
+
+        if baseline_start <= expense_date <= today:
+            baseline_cat[category] += amount
+            baseline_total += amount
+            day_totals[expense_date] += amount
+
+        if week_start <= expense_date <= today:
+            week_cat[category] += amount
+
+        if current_month_start <= expense_date <= today:
+            current_month_cat[category] += amount
+            current_month_total += amount
+
+        if prev_month_start <= expense_date <= prev_month_end:
+            prev_month_cat[category] += amount
+            prev_month_total += amount
+
+    alerts = []
+    risk_counts = {'Low': 0, 'Medium': 0, 'High': 0}
+
+    # Day-to-day increase checks inside rolling 7-day window (no need to wait 7 full days).
+    ordered_days = sorted(day_totals.keys())
+    for i in range(1, len(ordered_days)):
+        prev_day = ordered_days[i - 1]
+        curr_day = ordered_days[i]
+        prev_total = day_totals.get(prev_day, 0.0)
+        curr_total = day_totals.get(curr_day, 0.0)
+        if prev_total <= 0 or curr_total <= prev_total:
+            continue
+
+        increase_pct = _pct_change(curr_total, prev_total)
+        if increase_pct is None or increase_pct < 15:
+            continue
+
+        risk = classify_risk(increase_pct)
+        alerts.append({
+            'risk': risk,
+            'kind': 'daily_increase',
+            'category': 'Overall',
+            'increase_pct': round(increase_pct, 1),
+            'message': f"{curr_day.strftime('%A')} spending is {increase_pct:.1f}% higher than {prev_day.strftime('%A')}."
+        })
+        risk_counts[risk] += 1
+
+    # Current week vs usual weekly average by category.
+    weekly_baseline_factor = 7.0 / 7.0
+    for category in sorted(set(list(baseline_cat.keys()) + list(week_cat.keys()))):
+        baseline_weekly_avg = baseline_cat.get(category, 0.0) / weekly_baseline_factor
+        current_week = week_cat.get(category, 0.0)
+        if baseline_weekly_avg <= 0 or current_week <= baseline_weekly_avg:
+            continue
+
+        increase_pct = _pct_change(current_week, baseline_weekly_avg)
+        if increase_pct is None or increase_pct < 15:
+            continue
+
+        risk = classify_risk(increase_pct)
+        alerts.append({
+            'risk': risk,
+            'kind': 'weekly_category',
+            'category': category,
+            'increase_pct': round(increase_pct, 1),
+            'message': f'{category} spending is {increase_pct:.1f}% higher than your usual weekly average.'
+        })
+        risk_counts[risk] += 1
+
+    # Current month vs previous month by category.
+    for category in sorted(set(list(current_month_cat.keys()) + list(prev_month_cat.keys()))):
+        prev_amount = prev_month_cat.get(category, 0.0)
+        curr_amount = current_month_cat.get(category, 0.0)
+        if prev_amount <= 0 or curr_amount <= prev_amount:
+            continue
+
+        increase_pct = _pct_change(curr_amount, prev_amount)
+        if increase_pct is None or increase_pct < 15:
+            continue
+
+        risk = classify_risk(increase_pct)
+        alerts.append({
+            'risk': risk,
+            'kind': 'monthly_category',
+            'category': category,
+            'increase_pct': round(increase_pct, 1),
+            'message': f'{category} spending is rising faster than last month ({increase_pct:.1f}% increase).'
+        })
+        risk_counts[risk] += 1
+
+    # Month-end overspend projection against usual monthly baseline.
+    elapsed_days = today.day
+    days_in_month = calendar.monthrange(today.year, today.month)[1]
+    if elapsed_days >= 3 and current_month_total > 0 and baseline_total > 0:
+        projected_month_total = (current_month_total / elapsed_days) * days_in_month
+        increase_pct = _pct_change(projected_month_total, baseline_total)
+        if increase_pct is not None and increase_pct >= 15:
+            risk = classify_risk(increase_pct)
+            alerts.append({
+                'risk': risk,
+                'kind': 'monthly_projection',
+                'category': 'Overall',
+                'increase_pct': round(increase_pct, 1),
+                'message': 'You may exceed your usual monthly spending soon.'
+            })
+            risk_counts[risk] += 1
+
+    # Budget-crossing alert for user-defined monthly amount.
+    try:
+        monthly_budget = float(monthly_budget or 0)
+    except (TypeError, ValueError):
+        monthly_budget = 0.0
+
+    if monthly_budget > 0 and current_month_total > monthly_budget:
+        increase_pct = _pct_change(current_month_total, monthly_budget)
+        increase_pct = increase_pct if increase_pct is not None else 0.0
+        risk = classify_risk(increase_pct)
+        alerts.append({
+            'risk': risk,
+            'kind': 'monthly_budget_crossed',
+            'category': 'Budget',
+            'increase_pct': round(increase_pct, 1),
+            'message': f'You crossed your monthly budget (${monthly_budget:.2f}).'
+        })
+        risk_counts[risk] += 1
+
+    # Keep alert list concise and most important first.
+    alerts = sorted(alerts, key=lambda a: a['increase_pct'], reverse=True)[:6]
+
+    top_risk = 'Low'
+    if any(a['risk'] == 'High' for a in alerts):
+        top_risk = 'High'
+    elif any(a['risk'] == 'Medium' for a in alerts):
+        top_risk = 'Medium'
+
+    risk_score = {'Low': 30, 'Medium': 65, 'High': 90}[top_risk]
+
+    has_enough_history = baseline_total > 0
+
+    return {
+        'risk_level': top_risk,
+        'risk_score': risk_score,
+        'alerts': alerts,
+        'risk_counts': risk_counts,
+        'has_enough_history': has_enough_history,
+        'fallback_message': 'No spending found in the last 7 days.'
+    }
+
+
 def init_db():
     os.makedirs(UPLOAD_FOLDER, exist_ok=True)
     conn = get_db()
@@ -56,6 +253,7 @@ def init_db():
             password_hash TEXT    NOT NULL,
             is_admin      INTEGER NOT NULL DEFAULT 0,
             avatar        TEXT    NOT NULL DEFAULT '',
+            monthly_budget REAL   NOT NULL DEFAULT 0,
             remember_token TEXT NOT NULL DEFAULT '',
             remember_token_expiry INTEGER NOT NULL DEFAULT 0,
             created_at    TEXT    NOT NULL DEFAULT (datetime('now'))
@@ -78,6 +276,11 @@ def init_db():
     # Migration: add avatar column to existing databases
     try:
         conn.execute("ALTER TABLE users ADD COLUMN avatar TEXT NOT NULL DEFAULT ''")
+        conn.commit()
+    except sqlite3.OperationalError:
+        pass  # column already exists
+    try:
+        conn.execute('ALTER TABLE users ADD COLUMN monthly_budget REAL NOT NULL DEFAULT 0')
         conn.commit()
     except sqlite3.OperationalError:
         pass  # column already exists
@@ -403,6 +606,11 @@ def dashboard():
     query += ' ORDER BY date DESC, created_at DESC'
 
     conn = get_db()
+    user_settings = conn.execute(
+        'SELECT COALESCE(monthly_budget, 0) AS monthly_budget FROM users WHERE id = ?', [user_id]
+    ).fetchone()
+    monthly_budget = float(user_settings['monthly_budget'] or 0)
+
     expenses = conn.execute(query, params).fetchall()
 
     # Overall stats (unfiltered)
@@ -444,6 +652,7 @@ def dashboard():
         f"SELECT strftime('%Y-%m', date) AS month, SUM(amount) AS total "
         f"FROM expenses {chart_where} GROUP BY month ORDER BY month ASC", chart_params
     ).fetchall()
+
     conn.close()
 
     # Keep category chart/table stable by always showing all known categories.
@@ -472,6 +681,41 @@ def dashboard():
             })
 
     filtered_total = sum(e['amount'] for e in expenses)
+    has_spending_view_data = bool(expenses)
+
+    # Budget-only alert behavior: show alert only when set budget is crossed.
+    alert_total = filtered_total if has_filter else float(monthly_total or 0)
+    active_scope = 'Filtered spending' if has_filter else 'This month spending'
+    budget_alerts = []
+    budget_risk_counts = {'Low': 0, 'Medium': 0, 'High': 0}
+
+    if monthly_budget > 0 and alert_total > monthly_budget:
+        increase_pct = _pct_change(alert_total, monthly_budget)
+        increase_pct = increase_pct if increase_pct is not None else 0.0
+        risk = classify_risk(increase_pct)
+        budget_alerts.append({
+            'risk': risk,
+            'kind': 'budget_crossed',
+            'category': 'Budget',
+            'increase_pct': round(increase_pct, 1),
+            'message': f'{active_scope} crossed your budget (${monthly_budget:.2f}).'
+        })
+        budget_risk_counts[risk] += 1
+
+    budget_risk_level = 'Low'
+    if any(a['risk'] == 'High' for a in budget_alerts):
+        budget_risk_level = 'High'
+    elif any(a['risk'] == 'Medium' for a in budget_alerts):
+        budget_risk_level = 'Medium'
+
+    spending_alerts = {
+        'alerts': budget_alerts,
+        'risk_counts': budget_risk_counts,
+        'risk_level': budget_risk_level,
+        'risk_score': {'Low': 30, 'Medium': 65, 'High': 90}[budget_risk_level],
+        'has_enough_history': True,
+        'fallback_message': ''
+    }
 
     return render_template('expenses/dashboard.html',
         expenses=expenses,
@@ -481,6 +725,7 @@ def dashboard():
         monthly_total=monthly_total,
         filtered_total=filtered_total,
         categories=CATEGORIES,
+        monthly_budget=monthly_budget,
         has_filter=has_filter,
         filters=filters,
         cat_rows=cat_rows,
@@ -488,7 +733,43 @@ def dashboard():
         cat_values=[r['total'] for r in cat_rows],
         monthly_labels=[r['month'] for r in monthly_rows],
         monthly_values=[r['total'] for r in monthly_rows],
+        has_spending_view_data=has_spending_view_data,
+        spending_alerts=spending_alerts['alerts'],
+        spending_risk_level=spending_alerts['risk_level'],
+        spending_risk_score=spending_alerts['risk_score'],
+        spending_risk_counts=spending_alerts['risk_counts'],
+        spending_has_history=spending_alerts['has_enough_history'],
+        spending_fallback_message=spending_alerts['fallback_message'],
     )
+
+
+@app.route('/budget/set', methods=['POST'])
+@login_required
+def set_monthly_budget():
+    user_id = session['user_id']
+    raw_budget = request.form.get('monthly_budget', '').strip()
+
+    try:
+        if raw_budget == '':
+            budget_value = 0.0
+        else:
+            budget_value = float(raw_budget)
+        if budget_value < 0:
+            raise ValueError()
+    except ValueError:
+        flash('Please enter a valid monthly budget amount.', 'danger')
+        return redirect(url_for('dashboard'))
+
+    conn = get_db()
+    conn.execute('UPDATE users SET monthly_budget = ? WHERE id = ?', [budget_value, user_id])
+    conn.commit()
+    conn.close()
+
+    if budget_value > 0:
+        flash(f'Monthly budget set to ${budget_value:.2f}.', 'success')
+    else:
+        flash('Monthly budget cleared.', 'info')
+    return redirect(url_for('dashboard'))
 
 
 # ── Add Expense ────────────────────────────────────────────────────────────────
