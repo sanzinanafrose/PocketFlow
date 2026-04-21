@@ -1,0 +1,11 @@
+{
+  "files.exclude": {
+    "**/tempCodeRunnerFile.*": true
+  },
+  "search.exclude": {
+    "**/tempCodeRunnerFile.*": true
+  },
+  "code-runner.ignoreSelection": true,
+  "code-runner.saveFileBeforeRun": true,
+  "code-runner.runInTerminal": true
+}

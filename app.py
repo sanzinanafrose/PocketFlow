@@ -272,6 +272,16 @@ def init_db():
             updated_at TEXT    NOT NULL DEFAULT (datetime('now')),
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         );
+
+        CREATE TABLE IF NOT EXISTS coin_bank_savings (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id    INTEGER NOT NULL,
+            amount     REAL    NOT NULL,
+            date       TEXT    NOT NULL,
+            notes      TEXT    NOT NULL DEFAULT '',
+            created_at TEXT    NOT NULL DEFAULT (datetime('now')),
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        );
     ''')
     # Migration: add avatar column to existing databases
     try:
@@ -613,6 +623,19 @@ def dashboard():
 
     expenses = conn.execute(query, params).fetchall()
 
+    savings_stats = conn.execute(
+        'SELECT COALESCE(SUM(amount), 0) AS total_saved, COUNT(*) AS savings_count '
+        'FROM coin_bank_savings WHERE user_id = ?', [user_id]
+    ).fetchone()
+    saved_today = conn.execute(
+        'SELECT COALESCE(SUM(amount), 0) FROM coin_bank_savings WHERE user_id = ? AND date = ?',
+        [user_id, datetime.now().strftime('%Y-%m-%d')]
+    ).fetchone()[0]
+    recent_savings = conn.execute(
+        'SELECT id, amount, date, notes FROM coin_bank_savings WHERE user_id = ? '
+        'ORDER BY date DESC, created_at DESC LIMIT 5', [user_id]
+    ).fetchall()
+
     # Overall stats (unfiltered)
     stats = conn.execute(
         'SELECT COALESCE(SUM(amount),0) as total, COUNT(*) as count, COALESCE(AVG(amount),0) as avg '
@@ -722,7 +745,12 @@ def dashboard():
         total_all=stats['total'],
         expense_count=stats['count'],
         avg_expense=stats['avg'],
+        today=datetime.now().strftime('%Y-%m-%d'),
         monthly_total=monthly_total,
+        total_saved=savings_stats['total_saved'],
+        savings_count=savings_stats['savings_count'],
+        saved_today=saved_today,
+        recent_savings=recent_savings,
         filtered_total=filtered_total,
         categories=CATEGORIES,
         monthly_budget=monthly_budget,
@@ -770,6 +798,115 @@ def set_monthly_budget():
     else:
         flash('Monthly budget cleared.', 'info')
     return redirect(url_for('dashboard'))
+
+
+@app.route('/coin-bank/add', methods=['POST'])
+@login_required
+def add_coin_saving():
+    user_id = session['user_id']
+    raw_amount = request.form.get('amount', '').strip()
+    save_date = request.form.get('date', '').strip() or datetime.now().strftime('%Y-%m-%d')
+    notes = request.form.get('notes', '').strip()
+
+    try:
+        amount = float(raw_amount)
+        if amount <= 0:
+            raise ValueError()
+    except (TypeError, ValueError):
+        flash('Please enter a valid savings amount greater than zero.', 'danger')
+        return redirect(url_for('dashboard'))
+
+    try:
+        datetime.strptime(save_date, '%Y-%m-%d')
+    except ValueError:
+        flash('Please provide a valid savings date.', 'danger')
+        return redirect(url_for('dashboard'))
+
+    conn = get_db()
+    conn.execute(
+        'INSERT INTO coin_bank_savings (user_id, amount, date, notes) VALUES (?, ?, ?, ?)',
+        [user_id, amount, save_date, notes]
+    )
+    conn.commit()
+    conn.close()
+
+    flash(f'Saved ${amount:.2f} to your Coin Bank.', 'success')
+    return redirect(url_for('dashboard'))
+
+
+@app.route('/coin-bank/delete/<int:saving_id>', methods=['POST'])
+@login_required
+def delete_coin_saving(saving_id):
+    conn = get_db()
+    result = conn.execute(
+        'DELETE FROM coin_bank_savings WHERE id = ? AND user_id = ?',
+        [saving_id, session['user_id']]
+    )
+    conn.commit()
+    conn.close()
+
+    if result.rowcount:
+        flash('Coin Bank entry deleted.', 'success')
+    else:
+        flash('Savings entry not found.', 'danger')
+    return redirect(url_for('dashboard'))
+
+
+@app.route('/coin-bank/edit/<int:saving_id>', methods=['GET', 'POST'])
+@login_required
+def edit_coin_saving(saving_id):
+    conn = get_db()
+    saving = conn.execute(
+        'SELECT * FROM coin_bank_savings WHERE id = ? AND user_id = ?',
+        [saving_id, session['user_id']]
+    ).fetchone()
+    conn.close()
+
+    if not saving:
+        flash('Savings entry not found.', 'danger')
+        return redirect(url_for('dashboard'))
+
+    if request.method == 'POST':
+        raw_amount = request.form.get('amount', '').strip()
+        save_date = request.form.get('date', '').strip()
+        notes = request.form.get('notes', '').strip()
+
+        errors = []
+        amount = None
+
+        try:
+            amount = float(raw_amount)
+            if amount <= 0:
+                errors.append('Savings amount must be greater than zero.')
+        except (TypeError, ValueError):
+            errors.append('Please enter a valid savings amount.')
+
+        if not save_date:
+            errors.append('Date is required.')
+        else:
+            try:
+                datetime.strptime(save_date, '%Y-%m-%d')
+            except ValueError:
+                errors.append('Invalid date format.')
+
+        if len(notes) > 120:
+            errors.append('Note cannot exceed 120 characters.')
+
+        if not errors:
+            conn = get_db()
+            conn.execute(
+                "UPDATE coin_bank_savings SET amount = ?, date = ?, notes = ? WHERE id = ? AND user_id = ?",
+                [amount, save_date, notes, saving_id, session['user_id']]
+            )
+            conn.commit()
+            conn.close()
+            flash('Coin Bank entry updated successfully.', 'success')
+            return redirect(url_for('dashboard'))
+
+        for err in errors:
+            flash(err, 'danger')
+
+    return render_template('expenses/edit_coin_saving.html', saving=saving)
 
 
 # ── Add Expense ────────────────────────────────────────────────────────────────

@@ -6,7 +6,8 @@
 document.addEventListener('DOMContentLoaded', function () {
   document.querySelectorAll('.delete-form').forEach(function (form) {
     form.addEventListener('submit', function (e) {
-      if (!confirm('Are you sure you want to delete this expense? This cannot be undone.')) {
+      var message = form.getAttribute('data-confirm') || 'Are you sure you want to delete this expense? This cannot be undone.';
+      if (!confirm(message)) {
         e.preventDefault();
       }
     });
