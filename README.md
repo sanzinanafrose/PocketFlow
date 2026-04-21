@@ -2,7 +2,6 @@
 
 A full-stack web application built with **Python / Flask**, **SQLite**, **Bootstrap 5**, and **Chart.js** that lets individuals track personal expenses and provides administrators a platform-wide oversight dashboard.
 
----
 
 ## Features
 
